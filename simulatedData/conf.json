@@ -1,14 +1,14 @@
 {
  "$schema": "http://json-schema.org/schema#",
  "frame_time": 0.04,
- "frame_steps": 8,
- "end_time": 10,
+ "frame_steps": 4,
+ "end_time": 1,
  "cloths": [
   {
-   "mesh": "/home/cesnik/arcsim3/arcsim-0.3.1/meshes/square_hole.obj",
+   "mesh": "/home/cesnik/arcsim3/arcsim-0.3.1/meshes/square4_sub.obj",
    "materials": [
     {
-     "data": "materials/gray-interlock.json",
+     "data": "/home/cesnik/nrg_cloth_simulator/materials/gray-interlock.json",
      "thicken": 2
     }
    ],

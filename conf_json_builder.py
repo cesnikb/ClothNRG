@@ -44,16 +44,14 @@ def main():
     print(str(sys.argv))
 
     mesh = sys.argv[2]
-    material = "materials/gray-interlock.json"
-    body = sys.argv[3]
-    dataLocation = sys.argv[1]
-    body_coordinates = [float(sys.argv[4]),float(sys.argv[6]),float(sys.argv[5])]
-    body_degree = [sys.argv[7],sys.argv[8],sys.argv[9]]
+    dataLocation = os.path.join(sys.argv[1],sys.argv[3])
+    material = os.path.join(sys.argv[1],"materials/gray-interlock.json")
+
     builder = SchemaBuilder()
     builder.add_schema({
         "frame_time": 0.04,
-        "frame_steps": 8,
-        "end_time": 10,
+        "frame_steps": 4,
+        "end_time": 1,
         "cloths": [{
             "mesh": mesh,
 
@@ -81,7 +79,7 @@ def main():
     })
 
     builder.to_schema()
-    file = open(os.path.join(str(dataLocation), 'custom_conf.json'), 'w')
+    file = open(os.path.join(str(dataLocation), 'conf.json'), 'w')
     file.write(builder.to_json(indent=1))
     file.close()
 

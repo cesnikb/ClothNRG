@@ -2,6 +2,9 @@ import bpy
 import os
 from subprocess import call
 import math
+import glob
+from os import listdir
+from os.path import isfile, join
 
 clothing_obj  = None 
 body_obj  = None 
@@ -119,8 +122,18 @@ class simulate(bpy.types.Operator):
         simulationFolder = os.path.join(script_location,simulatedData)
         if not os.path.exists(simulationFolder):
             os.makedirs(simulationFolder)
+        else:
+            folder_path = os.path.join(script_location,simulatedData)
+            for file_object in os.listdir(folder_path):
+                file_object_path = os.path.join(folder_path, file_object)
+                if os.path.isfile(file_object_path) or os.path.islink(file_object_path):
+                    os.unlink(file_object_path)
+                else:
+                    shutil.rmtree(file_object_path)
+        
         export_body_obj()
         generate_custom_json()
+        arcsim()
         return {"FINISHED"}   
     
 def export_body_obj():
@@ -174,19 +187,23 @@ def delete_scene_objects():
     bpy.ops.object.delete() 
     
 def arcsim():
-    #call("arcsim simulateoffline ")
-    #call("arcsim generate simulationData/")
-    pass
+    call("arcsim simulateoffline "+os.path.join(os.path.join(script_location,simulatedData),"conf.json") +" " + os.path.join(script_location,simulatedData),shell=True)
+    call("arcsim generate "+ os.path.join(script_location,simulatedData), shell=True)
+    get_last_position()g
     
 def generate_custom_json():
     transform_body = gather_transformations()
     print(transform_body)
     path = os.path.join(script_location,"conf_json_builder.py")
-    print(path + " " + script_location + " " + clothing_obj[1] + " " + body_obj[1] + " " + transform_body[0] + " " + transform_body[1])
-    call("python " + path + " " + os.path.join(script_location,simulatedData) + " " + clothing_obj[1] + " " + body_obj[1] + " " + transform_body[0] + " " + transform_body[1] , shell=True)
+    call("python " + path + " " + script_location + " " + clothing_obj[1]+ " " + simulatedData  , shell=True)
     pass
 
-    
+def get_last_position():
+    #if frame_time =0.4 and end_time=1 -> last frame is 25
+    last_obj_file = os.path.join(script_location,simulatedData,"00025_00.obj")
+    handle_import(last_obj_file)
+        
+
 def register():
    # generate_custom_json()
     delete_scene_objects()
