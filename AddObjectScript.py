@@ -1,9 +1,13 @@
 import bpy
 import os
-
+from subprocess import call
+import math
 
 clothing_obj  = None 
 body_obj  = None 
+script_location = "/home/cesnik/nrg_cloth_simulator"
+simulatedData = "simulatedData"
+
 
 class TestPanel(bpy.types.Panel):
     bl_label = "Wearing Scenario"
@@ -36,6 +40,7 @@ class TestPanel(bpy.types.Panel):
         row = layout.row()
         row.label(text = "Parameters", icon="FILE")
         row = layout.row()
+        self.layout.operator("mesh.simulate", icon='PLAY', text="Simulate")
         
         
 class OPERATIONS_PANEL(bpy.types.Panel):
@@ -78,9 +83,9 @@ class importClothing(bpy.types.Operator):
         file_loc = os.path.abspath(bpy.path.abspath(context.scene.cloth_path))
         if(clothing_obj):
             bpy.ops.object.select_all(action='DESELECT')
-            bpy.data.objects[clothing_obj.id_data.name].select_set(True)
+            bpy.data.objects[clothing_obj[0].id_data.name].select_set(True)
             bpy.ops.object.delete()
-        clothing_obj = handle_import(file_loc)
+        clothing_obj = (handle_import(file_loc),file_loc)
         
         return {"FINISHED"}    
     
@@ -98,14 +103,44 @@ class importBody(bpy.types.Operator):
         
         if(body_obj):
             bpy.ops.object.select_all(action='DESELECT')
-            bpy.data.objects[body_obj.id_data.name].select_set(True)
+            bpy.data.objects[body_obj[0].id_data.name].select_set(True)
             bpy.ops.object.delete()
-        body_obj = handle_import(file_loc)
+        body_obj = (handle_import(file_loc),file_loc)
         return {"FINISHED"}      
 
+
+class simulate(bpy.types.Operator):
+    bl_idname = 'mesh.simulate'
+    bl_label = 'Simulate'
+    bl_options = {"REGISTER", "UNDO"}
+    
+
+    def execute(self, context):
+        simulationFolder = os.path.join(script_location,simulatedData)
+        if not os.path.exists(simulationFolder):
+            os.makedirs(simulationFolder)
+        export_body_obj()
+        generate_custom_json()
+        return {"FINISHED"}   
+    
+def export_body_obj():
+    global body_obj
+    if(body_obj):
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.data.objects[body_obj[0].id_data.name].select_set(True)
+        bpy.ops.export_scene.obj(filepath=os.path.join(os.path.join(script_location,simulatedData),"body.obj"),use_selection=True)
+    
+def gather_transformations():
+    body_location = body_obj[0].location
+    body_rotation = body_obj[0].rotation_euler
+    body_rotation_deg = [round( math.degrees(r) ,0 )  for r in body_rotation]
+    body_location_out = " ".join(map(str,body_location))
+    body_rotation_deg_out = " ".join(map(str,body_rotation_deg))
+    return (body_location_out,body_rotation_deg_out)
+       
 def get_materials():
 
-    materials_folder = os.listdir("./materials/")
+    materials_folder = os.listdir(os.path.join(script_location,"materials"))
     materials = []
     for m in materials_folder:
         if(m[-4:] == "json" and m[0] != "."):
@@ -138,7 +173,22 @@ def delete_scene_objects():
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete() 
     
+def arcsim():
+    #call("arcsim simulateoffline ")
+    #call("arcsim generate simulationData/")
+    pass
+    
+def generate_custom_json():
+    transform_body = gather_transformations()
+    print(transform_body)
+    path = os.path.join(script_location,"conf_json_builder.py")
+    print(path + " " + script_location + " " + clothing_obj[1] + " " + body_obj[1] + " " + transform_body[0] + " " + transform_body[1])
+    call("python " + path + " " + os.path.join(script_location,simulatedData) + " " + clothing_obj[1] + " " + body_obj[1] + " " + transform_body[0] + " " + transform_body[1] , shell=True)
+    pass
+
+    
 def register():
+   # generate_custom_json()
     delete_scene_objects()
     bpy.types.WindowManager.clothing_obj = bpy.props.StringProperty()
     bpy.types.WindowManager.clothing_obj = ""
@@ -163,6 +213,7 @@ def register():
         name="Clothing Material")
     bpy.utils.register_class(importClothing)
     bpy.utils.register_class(importBody)
+    bpy.utils.register_class(simulate)
     bpy.utils.register_class(OPERATIONS_PANEL)
     
     bpy.utils.register_class(TestPanel)
