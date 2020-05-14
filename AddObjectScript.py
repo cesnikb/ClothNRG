@@ -5,12 +5,16 @@ import math
 import glob
 from os import listdir
 from os.path import isfile, join
+import bpy
+from mathutils import Color
 
 clothing_obj  = None 
+clothing_obj_new  = None 
 body_obj  = None 
 script_location = "/home/cesnik/nrg_cloth_simulator"
 simulatedData = "simulatedData"
 material = None
+vertex_values = []
 
 class TestPanel(bpy.types.Panel):
     bl_label = "Wearing Scenario"
@@ -111,7 +115,15 @@ class importBody(bpy.types.Operator):
         body_obj = (handle_import(file_loc),file_loc)
         return {"FINISHED"}      
 
+def set_shading_mode(mode="SOLID", screens=[]):
 
+    screens = screens if screens else [bpy.context.screen]
+    for s in screens:
+        for spc in s.areas:
+            if spc.type == "VIEW_3D":
+                spc.spaces[0].shading.type = mode
+                break # we expect at most 1 VIEW_3D space
+            
 class simulate(bpy.types.Operator):
     bl_idname = 'mesh.simulate'
     bl_label = 'Simulate'
@@ -119,6 +131,10 @@ class simulate(bpy.types.Operator):
     
 
     def execute(self, context):
+        
+        #context.view_layer.objects.active = None
+        #bpy.ops.object.mode_set(mode = 'VERTEX_PAINT')
+        
         simulationFolder = os.path.join(script_location,simulatedData)
         if not os.path.exists(simulationFolder):
             os.makedirs(simulationFolder)
@@ -131,6 +147,8 @@ class simulate(bpy.types.Operator):
                 else:
                     shutil.rmtree(file_object_path)
         
+
+         
         export_body_obj()
         generate_custom_json()
         arcsim()
@@ -138,6 +156,42 @@ class simulate(bpy.types.Operator):
         bpy.ops.object.select_all(action='DESELECT')
         bpy.data.objects[clothing_obj[0].id_data.name].select_set(True)
         bpy.ops.object.delete()
+        
+
+        get_vertex_value()
+        color_vertex_new(clothing_obj_new.id_data.name,context)
+        
+        set_shading_mode("RENDERED")
+        bpy.context.view_layer.objects.active = clothing_obj_new
+        ob = context.active_object
+        
+        mat = bpy.data.materials.get("Material")
+        
+        if mat is None:
+            # create material
+            mat = bpy.data.materials.new(name="Material")
+   
+        if ob.data.materials:
+            # assign to 1st material slot
+            ob.data.materials[0] = mat
+        else:
+            # no slots
+            ob.data.materials.append(mat)
+
+        mat.use_nodes = True
+        nodes = mat.node_tree.nodes
+        node = nodes.new("ShaderNodeAttribute")
+        node.attribute_name = "Col"
+        bsdf = mat.node_tree.nodes.get('Principled BSDF')
+        mat.node_tree.links.new(node.outputs[0],bsdf.inputs[0])
+        
+        light_data = bpy.data.lights.new(name="sunlight", type='POINT')
+        light_data.energy = 20
+        light_object = bpy.data.objects.new(name="sunlight", object_data=light_data)
+        bpy.context.collection.objects.link(light_object)
+        bpy.context.view_layer.objects.active = light_object
+        dg = bpy.context.evaluated_depsgraph_get() 
+        dg.update()
         
         return {"FINISHED"}   
     
@@ -198,17 +252,47 @@ def arcsim():
     
 def generate_custom_json():
     transform_body = gather_transformations()
-    print(transform_body)
     path = os.path.join(script_location,"conf_json_builder.py")
     call("python " + path + " " + script_location + " " + clothing_obj[1]+ " " + simulatedData + " " + bpy.context.scene.MyEnum  , shell=True)
     pass
 
 def get_last_position():
+    global clothing_obj_new
     #if frame_time =0.4 and end_time=1 -> last frame is 25
-    last_obj_file = os.path.join(script_location,simulatedData,"00025_00.obj")
-    handle_import(last_obj_file)
-        
+    last_obj_file = os.path.join(script_location,simulatedData,"00020_00.obj")
+    clothing_obj_new = handle_import(last_obj_file)
+     
+     
 
+def color_vertex_new(obj,cont):
+    global vertex_values
+    """Paints a single vertex where vert is the index of the vertex
+    and color is a tuple with the RGB values."""
+    obj_d = bpy.data.objects[obj]
+    obj_data  = obj_d.data
+    
+    mesh = obj_data 
+    scn = bpy.context.scene
+    
+    cont.view_layer.objects.active = obj_d
+    bpy.ops.object.mode_set(mode = 'VERTEX_PAINT')
+    
+    for polygon in mesh.polygons:
+            for i, index in enumerate(polygon.vertices):
+                vert_val = vertex_values[index]
+                loop_index = polygon.loop_indices[i]
+                mesh.vertex_colors.active.data[loop_index].color = (float(vert_val),0.0,0.0,0.4)
+
+def get_vertex_value():
+    global vertex_values
+    call("python " + os.path.join(script_location,"suit_fit_calculation.py ")+ os.path.join(script_location,simulatedData),shell=True)
+    
+    f = open(os.path.join(script_location,simulatedData,"vertex_value.txt"), "r")
+    output = []
+    for x in f:
+        vertex_values.append(x.strip())
+    f.close()          
+          
 def register():
    # generate_custom_json()
     delete_scene_objects()

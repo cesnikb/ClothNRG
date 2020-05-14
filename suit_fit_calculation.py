@@ -1,5 +1,5 @@
 import numpy as np
-import math
+import math,os,sys
 
 
 def get_area_of_triangle(l):
@@ -43,15 +43,9 @@ def normalize_vertex(x, max, min):
     return (x - min) / (max - min)
 
 
-cloth_obj_last = import_obj_files("/home/cesnik/nrg_cloth_simulator/simulatedData/00025_00.obj")
+cloth_obj_last = import_obj_files("/home/cesnik/nrg_cloth_simulator/simulatedData/00020_00.obj")
 cloth_obj_first = import_obj_files("/home/cesnik/nrg_cloth_simulator/simulatedData/00000_00.obj")
 vertex_changes = [[] for i in range(len(cloth_obj_first["v"]))]
-
-
-print(len(cloth_obj_first["v"]))
-print(len(cloth_obj_first["f"]))
-print(len(cloth_obj_last["v"]))
-print(len(cloth_obj_last["f"]))
 
 for face in cloth_obj_first["f"]:
     v1 = int(face[0].split("/")[0])
@@ -62,19 +56,28 @@ for face in cloth_obj_first["f"]:
 
     plane_size_first = get_area_of_triangle(first)
     plane_size_last = get_area_of_triangle(last)
-    vertex_changes[v1-1].append(abs(plane_size_first-plane_size_last))
-    vertex_changes[v2-1].append(abs(plane_size_first-plane_size_last))
-    vertex_changes[v3-1].append(abs(plane_size_first-plane_size_last))
+    vertex_changes[v1-1].append(plane_size_first-plane_size_last)
+    vertex_changes[v2-1].append(plane_size_first-plane_size_last)
+    vertex_changes[v3-1].append(plane_size_first-plane_size_last)
 
 for i,v in enumerate(vertex_changes):
     vertex_changes[i] = sum(vertex_changes[i])/len(vertex_changes)
 
 # print(vertex_changes)
-max_v = max(vertex_changes)
-min_v = min(vertex_changes)
+max_v = max(sorted(vertex_changes)[int(len(vertex_changes)*0.01):-int(len(vertex_changes)*0.01)])
+min_v = min(sorted(vertex_changes)[int(len(vertex_changes)*0.01):-int(len(vertex_changes)*0.01)])
+f_out = open(os.path.join(sys.argv[1],"vertex_value.txt"), "w")
 
 for i,v in enumerate(vertex_changes):
     vertex_changes[i] = normalize_vertex(v,max_v,min_v)
-print(sorted(vertex_changes))
-# get_area_of_triangle([0.098131, 0.0335933,0.310724],[0.0884455,0.0273689,0.314843],[0.0893312, 0.0257522, 0.315317])
+    if vertex_changes[i] < 0:
+        out_text = 0
+    elif vertex_changes[i] > 1:
+        out_text = 1
+    else:
+        out_text = vertex_changes[i]
+    f_out.write(str(out_text)+"\n")
+f_out.close()
+#print(sorted(vertex_changes))
+# print(get_area_of_triangle([[0.098131, 0.0335933,0.310724],[0.0884455,0.0273689,0.314843],[0.0893312, 0.0257522, 0.315317]]))
 

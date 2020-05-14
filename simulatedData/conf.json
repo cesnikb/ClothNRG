@@ -1,14 +1,18 @@
 {
  "$schema": "http://json-schema.org/schema#",
- "frame_time": 0.04,
+ "frame_time": 0.05,
  "frame_steps": 4,
  "end_time": 1,
  "cloths": [
   {
-   "mesh": "/home/cesnik/nrg_cloth_simulator/tshirt_sub.obj",
+   "mesh": "/home/cesnik/nrg_cloth_simulator/square_subb2.obj",
    "materials": [
     {
-     "data": "/home/cesnik/nrg_cloth_simulator/materials/white-dots-on-blk.json",
+     "data": "/home/cesnik/nrg_cloth_simulator/materials/navy-sparkle-sweat.json",
+     "density_mult": 3,
+     "stretching_mult": 2,
+     "bending_mult": 3,
+     "yield_curv": 200,
      "thicken": 2
     }
    ],

@@ -49,13 +49,17 @@ def main():
 
     builder = SchemaBuilder()
     builder.add_schema({
-        "frame_time": 0.04,
+        "frame_time": 0.05,
         "frame_steps": 4,
         "end_time": 1,
         "cloths": [{
             "mesh": mesh,
 
             "materials": [{"data": material,
+                           "density_mult":3,
+                           "stretching_mult":2,
+                           "bending_mult":3,
+                           "yield_curv": 200,
                            "thicken": 2}],
             "remeshing": {
                 "refine_angle": 0.3,
