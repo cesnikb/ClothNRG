@@ -45,7 +45,7 @@ def main():
 
     mesh = sys.argv[2]
     dataLocation = os.path.join(sys.argv[1],sys.argv[3])
-    material = os.path.join(sys.argv[1],"materials/gray-interlock.json")
+    material = os.path.join(sys.argv[1],"materials/"+sys.argv[4])
 
     builder = SchemaBuilder()
     builder.add_schema({

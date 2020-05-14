@@ -5,10 +5,10 @@
  "end_time": 1,
  "cloths": [
   {
-   "mesh": "/home/cesnik/arcsim3/arcsim-0.3.1/meshes/square4_sub.obj",
+   "mesh": "/home/cesnik/nrg_cloth_simulator/tshirt_sub.obj",
    "materials": [
     {
-     "data": "/home/cesnik/nrg_cloth_simulator/materials/gray-interlock.json",
+     "data": "/home/cesnik/nrg_cloth_simulator/materials/white-dots-on-blk.json",
      "thicken": 2
     }
    ],

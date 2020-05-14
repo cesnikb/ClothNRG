@@ -10,7 +10,7 @@ clothing_obj  = None
 body_obj  = None 
 script_location = "/home/cesnik/nrg_cloth_simulator"
 simulatedData = "simulatedData"
-
+material = None
 
 class TestPanel(bpy.types.Panel):
     bl_label = "Wearing Scenario"
@@ -134,6 +134,11 @@ class simulate(bpy.types.Operator):
         export_body_obj()
         generate_custom_json()
         arcsim()
+        
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.data.objects[clothing_obj[0].id_data.name].select_set(True)
+        bpy.ops.object.delete()
+        
         return {"FINISHED"}   
     
 def export_body_obj():
@@ -189,13 +194,13 @@ def delete_scene_objects():
 def arcsim():
     call("arcsim simulateoffline "+os.path.join(os.path.join(script_location,simulatedData),"conf.json") +" " + os.path.join(script_location,simulatedData),shell=True)
     call("arcsim generate "+ os.path.join(script_location,simulatedData), shell=True)
-    get_last_position()g
+    get_last_position()
     
 def generate_custom_json():
     transform_body = gather_transformations()
     print(transform_body)
     path = os.path.join(script_location,"conf_json_builder.py")
-    call("python " + path + " " + script_location + " " + clothing_obj[1]+ " " + simulatedData  , shell=True)
+    call("python " + path + " " + script_location + " " + clothing_obj[1]+ " " + simulatedData + " " + bpy.context.scene.MyEnum  , shell=True)
     pass
 
 def get_last_position():
