@@ -5,14 +5,10 @@
  "end_time": 1,
  "cloths": [
   {
-   "mesh": "/home/cesnik/nrg_cloth_simulator/square_subb2.obj",
+   "mesh": "/home/cesnik/nrg_cloth_simulator/tshirt_sub.obj",
    "materials": [
     {
-     "data": "/home/cesnik/nrg_cloth_simulator/materials/navy-sparkle-sweat.json",
-     "density_mult": 3,
-     "stretching_mult": 2,
-     "bending_mult": 3,
-     "yield_curv": 200,
+     "data": "/home/cesnik/nrg_cloth_simulator/materials/white-dots-on-blk.json",
      "thicken": 2
     }
    ],

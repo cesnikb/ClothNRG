@@ -47,6 +47,7 @@ class TestPanel(bpy.types.Panel):
         row = layout.row()
         row.label(text = "Parameters", icon="FILE")
         row = layout.row()
+        props = self.layout.operator('object.anim_time')
         self.layout.operator("mesh.simulate", icon='PLAY', text="Simulate")
         
         
@@ -161,7 +162,7 @@ class simulate(bpy.types.Operator):
         get_vertex_value()
         color_vertex_new(clothing_obj_new.id_data.name,context)
         
-        set_shading_mode("RENDERED")
+        set_shading_mode("MATERIAL")
         bpy.context.view_layer.objects.active = clothing_obj_new
         ob = context.active_object
         
@@ -199,17 +200,13 @@ def export_body_obj():
     global body_obj
     if(body_obj):
         bpy.ops.object.select_all(action='DESELECT')
-        bpy.data.objects[body_obj[0].id_data.name].select_set(True)
+        print("BODYYY")
+        print(body_obj)
+        body_name = body_obj[0].id_data.name
+        bpy.data.objects[body_name].select_set(True)
         bpy.ops.export_scene.obj(filepath=os.path.join(os.path.join(script_location,simulatedData),"body.obj"),use_selection=True)
     
-def gather_transformations():
-    body_location = body_obj[0].location
-    body_rotation = body_obj[0].rotation_euler
-    body_rotation_deg = [round( math.degrees(r) ,0 )  for r in body_rotation]
-    body_location_out = " ".join(map(str,body_location))
-    body_rotation_deg_out = " ".join(map(str,body_rotation_deg))
-    return (body_location_out,body_rotation_deg_out)
-       
+ 
 def get_materials():
 
     materials_folder = os.listdir(os.path.join(script_location,"materials"))
@@ -251,15 +248,21 @@ def arcsim():
     get_last_position()
     
 def generate_custom_json():
-    transform_body = gather_transformations()
+    f_time = str(round(bpy.context.window_manager.operator_properties_last("object.anim_time").frame_time,2))
+    f_steps = str(bpy.context.window_manager.operator_properties_last("object.anim_time").frame_steps)
+    e_time = str(bpy.context.window_manager.operator_properties_last("object.anim_time").end_time)
+    print(f_time,f_steps,e_time)
     path = os.path.join(script_location,"conf_json_builder.py")
-    call("python " + path + " " + script_location + " " + clothing_obj[1]+ " " + simulatedData + " " + bpy.context.scene.MyEnum  , shell=True)
-    pass
+    call("python " + path + " " + script_location + " " + clothing_obj[1]+ " " + simulatedData + " " + bpy.context.scene.MyEnum + " " + f_time + " " + f_steps + " " + e_time   , shell=True)
 
 def get_last_position():
     global clothing_obj_new
+    
+    f_time = round(bpy.context.window_manager.operator_properties_last("object.anim_time").frame_time,2)
+    e_time = bpy.context.window_manager.operator_properties_last("object.anim_time").end_time
+    n_frames = str(math.floor(e_time/f_time)).zfill(5) + "_00.obj"
     #if frame_time =0.4 and end_time=1 -> last frame is 25
-    last_obj_file = os.path.join(script_location,simulatedData,"00020_00.obj")
+    last_obj_file = os.path.join(script_location,simulatedData,n_frames)
     clothing_obj_new = handle_import(last_obj_file)
      
      
@@ -291,10 +294,28 @@ def get_vertex_value():
     output = []
     for x in f:
         vertex_values.append(x.strip())
-    f.close()          
+    f.close()  
+    
+class OBJECT_OT_anim_time(bpy.types.Operator):
+    bl_idname = "object.anim_time"
+    bl_label = "Animation time"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    frame_time: bpy.props.FloatProperty(name="frametime",default = 0.05, min = 0.01, max = 0.1, step=1)
+    frame_steps: bpy.props.IntProperty(name="framesteps",default = 4, min = 1, max = 10)
+    end_time: bpy.props.IntProperty(name="endtime",default = 1, min = 1, max = 10)
+
+    def execute(self, context):
+#        self.report(
+#            {'INFO'}, 'F: %.2f  B: %s  S: %r' %
+#            (self.frame_time, self.frame_steps, self.end_time)
+#        )
+        print('Frame time:', self.frame_time)
+        print('Frame steps:', self.frame_steps)
+        print('End time:', self.end_time)
+        return {'FINISHED'}        
           
 def register():
-   # generate_custom_json()
     delete_scene_objects()
     bpy.types.WindowManager.clothing_obj = bpy.props.StringProperty()
     bpy.types.WindowManager.clothing_obj = ""
@@ -319,6 +340,7 @@ def register():
         name="Clothing Material")
     bpy.utils.register_class(importClothing)
     bpy.utils.register_class(importBody)
+    bpy.utils.register_class(OBJECT_OT_anim_time)
     bpy.utils.register_class(simulate)
     bpy.utils.register_class(OPERATIONS_PANEL)
     
@@ -330,9 +352,13 @@ def unregister():
     bpy.utils.unregister_class(TestPanel)
     del bpy.types.Scene.cloth_path
     del bpy.types.Scene.body_path
+    del bpy.types.Scene.MyEnum
     bpy.utils.unregister_class(importClothing)
     bpy.utils.unregister_class(importBody)
+    bpy.utils.unregister_class(OBJECT_OT_anim_time)
+    bpy.utils.unregister_class(simulate)
     bpy.utils.unregister_class(OPERATIONS_PANEL)
     del bpy.types.Scene.dropdown_list
+    
 if __name__ == "__main__":
     register()
