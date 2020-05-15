@@ -5,7 +5,7 @@
  "end_time": 1,
  "cloths": [
   {
-   "mesh": "/home/cesnik/nrg_cloth_simulator/tshirt_down.obj",
+   "mesh": "/home/cesnik/nrg_cloth_simulator/tshirt_sub.obj",
    "materials": [
     {
      "data": "/home/cesnik/nrg_cloth_simulator/materials/white-dots-on-blk.json",
